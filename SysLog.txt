@@ -1,0 +1,4 @@
+192.168.1.1	Sep 29 14:47:49		user	warning	ER605	2024-09-29 14:47:49 web<4>: 192.168.1.27 failed to log into the web interface by wrong password.
+192.168.1.1	Sep 29 14:48:04		user	warning	ER605	2024-09-29 14:48:04 web<4>: 192.168.1.27 failed to log into the web interface by wrong password.
+192.168.1.102	Sep 29 14:55:36		logalert	warning	NeoLogger	PING Lost: 192.168.100.1
+192.168.1.102	Sep 29 14:56:20		logalert	warning	NeoLogger	PING Restored: 192.168.100.1

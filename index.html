@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+    <meta charset="UTF-8">
+    <title>SysLog Viewer</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+    <style>
+        body {
+            font-family: Arial, sans-serif; /* Set font for the entire page */
+            margin: 20px; /* Margin around the body */
+            background-color: #FFFFFF; /* Background color of the page */
+        }
+        .syslog-header {
+            background-color: #667788; /* Header background color */
+            color: white; /* Header text color */
+            padding: 10px; /* Padding inside the header */
+            font-size: 20px; /* Font size for the header */
+            font-weight: bold; /* Bold font for the header */
+            position: sticky; /* Keep header fixed at the top */
+            top: 0; /* Position at the top */
+            z-index: 10; /* Ensure header is above other content */
+            margin: 0 20px; /* Margin for the header */
+            display: flex; /* Use flexbox for alignment */
+            justify-content: center; /* Center header text */
+            align-items: center; /* Center items vertically */
+        }
+        .filter {
+            display: flex; /* Align filter items in a row */
+            align-items: center; /* Center items vertically */
+            margin-left: auto; /* Push filter section to the right */
+            font-size: 12px; /* Font size for the filter label */
+        }
+        .filter label {
+            margin-right: 5px; /* Space between label and input */
+        }
+        .filter input {
+            padding: 5px; /* Padding for the input */
+            border: none; /* Remove border */
+            border-radius: 3px; /* Rounded corners */
+        }
+        .log-container {
+            max-height: 80vh; /* Maximum height for log container */
+            overflow-y: auto; /* Enable vertical scrolling */
+            border: 1px solid #ddd; /* Border around log container */
+            margin: 0 20px; /* Margin for log container */
+        }
+        table {
+            width: 100%; /* Full width for the table */
+            border-collapse: collapse; /* Collapse borders for the table */
+        }
+        th, td {
+            border: 1px solid #ddd; /* Border for table cells */
+            padding: 8px; /* Padding inside table cells */
+            text-align: left; /* Align text to the left */
+            background-color: white; /* Background color for cells */
+        }
+        tr:hover td {
+            background-color: #F8F8F8; /* Highlight row on hover */
+        }
+        .log {
+            white-space: pre; /* Preserve whitespace in logs */
+        }
+    </style>
+    <script>
+        let logData = []; // Array to store log data
+        let firstLoad = true; // Variable to track if it's the first load of the logs
+        let autoRefreshEnabled = true; // Variable to control auto-refresh
+
+        // Function to load the logs from the SysLog.txt file
+        function loadLogs() {
+            if (!autoRefreshEnabled) return; // Skip loading logs if auto-refresh is disabled
+
+            const r = new XMLHttpRequest();
+            r.open("GET", 'SysLog.txt', true); // Open a request for the log file
+            r.onload = function() {
+                if (r.status === 200) {
+                    logData = r.responseText.split('\n'); // Split log data by line
+                    renderLogs(); // Render the logs into the table
+
+                    // Scroll to the bottom only on the first load
+                    if (firstLoad) {
+                        scrollToBottom();
+                        firstLoad = false; // Disable auto-scroll after the first load
+                    }
+                } else {
+                    console.error("Failed to load file: " + r.status); // Log error if file fails to load
+                }
+            };
+            r.onerror = function() {
+                console.error("Error occurred while trying to load file."); // Log error if there's an issue with the request
+            };
+            r.send(); // Send the request
+        }
+
+        // Function to render the logs into the HTML table
+        function renderLogs() {
+            const tableBody = document.getElementById("logTableBody");
+            tableBody.innerHTML = ''; // Clear the current table contents
+
+            // Filter out empty lines from log data
+            logData.filter(logLine => logLine.trim() !== '').forEach(logLine => {
+                const tr = document.createElement("tr"); // Create a new table row
+                const td = document.createElement("td"); // Create a new table cell
+                td.className = "log"; // Set class for the cell
+                td.textContent = logLine; // Set the text content to the log line
+                tr.appendChild(td); // Append cell to the row
+                tableBody.appendChild(tr); // Append row to the table body
+            });
+        }
+
+        // Function to filter logs based on user input
+        function filterLogs() {
+            const filterValue = document.getElementById("filterInput").value.toLowerCase(); // Get the filter input
+
+            // Disable auto-refresh when filtering is used
+            autoRefreshEnabled = false;
+
+            // Filter log data to only include lines that match the input
+            const filteredData = logData.filter(logLine => 
+                logLine.toLowerCase().includes(filterValue) && logLine.trim() !== ''
+            );
+
+            const tableBody = document.getElementById("logTableBody");
+            tableBody.innerHTML = ''; // Clear the current table contents
+
+            // Render filtered logs into the table
+            filteredData.forEach(logLine => {
+                const tr = document.createElement("tr"); // Create a new table row
+                const td = document.createElement("td"); // Create a new table cell
+                td.className = "log"; // Set class for the cell
+                td.textContent = logLine; // Set the text content to the log line
+                tr.appendChild(td); // Append cell to the row
+                tableBody.appendChild(tr); // Append row to the table body
+            });
+        }
+
+        // Function to scroll the log container to the bottom
+        function scrollToBottom() {
+            const logContainer = document.querySelector('.log-container');
+            logContainer.scrollTop = logContainer.scrollHeight; // Scroll to the bottom of the container
+        }
+
+        // Set up automatic refresh to load logs every 5 seconds
+        setInterval(loadLogs, 5000);
+
+        // Load logs when the page is loaded
+        window.onload = function() {
+            loadLogs(); // Call loadLogs when the page is fully loaded
+        };
+    </script>
+</head>
+<body>
+    <div class="syslog-header">
+        <i class="fas fa-file-alt" style="margin-right: 10px;"></i> <!-- Icon before Syslog Viewer -->
+        Syslog Viewer
+        <div class="filter">
+            <i class="fas fa-filter"></i> <!-- Filter icon -->
+            <label for="filterInput">&nbsp;Filter Logs:</label>
+            <input type="text" id="filterInput" oninput="filterLogs()" placeholder="Enter text to filter...">
+        </div>
+    </div>
+    <div class="log-container">
+        <table>
+            <tbody id="logTableBody">
+                <!-- Log rows will be added here dynamically -->
+            </tbody>
+        </table>
+    </div>
+</body>
+</html>
